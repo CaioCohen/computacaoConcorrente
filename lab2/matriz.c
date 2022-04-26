@@ -20,12 +20,10 @@ typedef struct
 void *tarefa(void *arg)
 {
     tArgs *args = (tArgs *)arg;
-    // printf("Thread %d\n", args->id);
     for (int k = args->id; k < args->dim; k += nthreads)
     {
         for (int i = 0; i < args->dim; i++)
         {
-            // printf("Thread lendo o elemento: [%d][%d]\n", k, i);
             for (int j = 0; j < args->dim; j++)
             {
                 matSaidaConcorrente[k * (args->dim) + i] += mat1[k * (args->dim) + j] * mat2[j * (args->dim) + i];
@@ -128,7 +126,6 @@ int main(int argc, char *argv[])
     {
         for (int i = 0; i < dim; i++)
         {
-            // printf("Thread lendo o elemento: [%d][%d]\n", k, i);
             for (int j = 0; j < dim; j++)
             {
                 matSaidaSequencial[k * (dim) + i] += mat1[k * (dim) + j] * mat2[j * (dim) + i];
