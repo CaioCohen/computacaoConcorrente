@@ -55,9 +55,10 @@ int main(int argc, char *argv[])
         fprintf(stderr, "ERRO--malloc\n");
         return 2;
     }
+    srand(time(NULL));
     // preenche o vetor de entrada
     for (long int i = 0; i < N; i++)
-        vetor[i] = 1000.1 / (i + 1);
+        vetor[i] = rand() % N;
 
     // analise sequencial dos elementos
     GET_TIME(ini);
