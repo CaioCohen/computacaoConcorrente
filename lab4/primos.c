@@ -1,19 +1,46 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <math.h>
 #include "timer.h"
 
-long long int N; // dimensao do vetor de entrada
+long long int N, iGlobal = 0; // dimensao do vetor de entrada
 int nthreads;    // numero de threads
 int *vetor;   // vetor de entrada com dimensao dim
+pthread_mutex_t lock;
+
+int ehPrimo(int n){
+    double raiz = sqrt(n);
+    if(n <= 2){
+        return 0;
+    }
+    for(int i = 2; i <= raiz; i++){
+        if (!(n % i)){
+            return 0;
+        }
+    }
+    return 1;
+}
 
 // fluxo das threads
-void *tarefa(void *arg)
+void *tarefa()
 {
-    int index = (int*)arg; // identificador da thread
+    int vetorRaizes[N];
     // soma os elementos do bloco da thread
-    for (long long int i = index; i < N; i+= nthreads){
+    int i = 0, iv=0;
+    while(i < N){
         //fazer
+        pthread_mutex_lock(&lock);
+        i = iGlobal;
+        if(ehPrimo(vetor[i])){
+            vetorRaizes[iv] = vetor[i];
+            iv++;
+        }
+        iGlobal++;
+        pthread_mutex_unlock(&lock);
+    }
+    for(int i = 0; i < iv; i++){
+        printf("%d\n", vetorRaizes[i]);
     }
     // retorna o resultado da soma local
     pthread_exit(NULL);
@@ -48,12 +75,13 @@ int main(int argc, char *argv[])
 
     // analise sequencial dos elementos
     GET_TIME(ini);
-    maxSeq = vetor[0];
-    minSeq = vetor[0];
     for (long long int i = 0; i < N; i++){
-        maxSeq = vetor[i] > maxSeq ? vetor[i] : maxSeq;
-        minSeq = vetor[i] < minSeq ? vetor[i] : minSeq;
+        //fazer
+        if(ehPrimo(vetor[i])){
+            printf("%d\n", vetor[i]);
+        }
     }
+
     GET_TIME(fim);
     timeSeq = fim - ini;
     printf("Tempo sequencial:  %lf\n", timeSeq);
@@ -67,16 +95,15 @@ int main(int argc, char *argv[])
         return 2;
     }
     // criar as threads
+    pthread_mutex_init(&lock, NULL);
     for (long int i = 0; i < nthreads; i++)
     {
-        if (pthread_create(tid + i, NULL, tarefa, (void *)i))
+        if (pthread_create(tid + i, NULL, tarefa, NULL))
         {
             fprintf(stderr, "ERRO--pthread_create\n");
             return 3;
         }
     }
-    maxConc = vetor[0];
-    minConc = vetor[0];
     // aguardar o termino das threads
     for (long int i = 0; i < nthreads; i++)
     {
@@ -86,6 +113,7 @@ int main(int argc, char *argv[])
             return 3;
         }
     }
+    pthread_mutex_destroy(&lock);
     GET_TIME(fim);
     timeConc = fim - ini;
     printf("Tempo concorrente:  %lf\n", timeConc);

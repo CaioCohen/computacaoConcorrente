@@ -1,7 +1,7 @@
 # Compiler flags
 CFLAGS=-Wall
 # Linker flag
-LFLAGS=-lpthread
+LFLAGS=-lpthread -lm
 SOURCES=primos.c
 EXEC=primos.out
 
