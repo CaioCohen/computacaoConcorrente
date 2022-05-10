@@ -4,7 +4,7 @@
 #include <math.h>
 #include "timer.h"
 
-long long int N, iGlobal = 0; // dimensao do vetor de entrada
+long long int N, iGlobal = 0;
 int nthreads;    // numero de threads
 int *vetor;   // vetor de entrada com dimensao dim
 pthread_mutex_t lock;
@@ -23,24 +23,17 @@ int ehPrimo(int n){
 }
 
 // fluxo das threads
-void *tarefa()
+void *tarefa(void* arg)
 {
-    int vetorRaizes[N];
+    double* vetorLocal = (double *) arg;
     // soma os elementos do bloco da thread
-    int i = 0, iv=0;
+    int i = 0;
     while(i < N){
         //fazer
         pthread_mutex_lock(&lock);
-        i = iGlobal;
-        if(ehPrimo(vetor[i])){
-            vetorRaizes[iv] = vetor[i];
-            iv++;
-        }
-        iGlobal++;
+        i = iGlobal++;
         pthread_mutex_unlock(&lock);
-    }
-    for(int i = 0; i < iv; i++){
-        printf("%d\n", vetorRaizes[i]);
+        vetorLocal[i] = ehPrimo(vetor[i]) ? sqrt(vetor[i]) : vetor[i];
     }
     // retorna o resultado da soma local
     pthread_exit(NULL);
@@ -52,6 +45,7 @@ int main(int argc, char *argv[])
     double ini, fim; // tomada de tempo
     pthread_t *tid;                   // identificadores das threads no sistema
     double timeSeq, timeConc;
+    float * vetorSeq, * vetorConc;
 
     // recebe e valida os parametros de entrada (dimensao do vetor, numero de threads)
     if (argc < 3)
@@ -68,6 +62,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "ERRO--malloc\n");
         return 2;
     }
+    vetorSeq = (float *)malloc(sizeof(float) *  N);
+    vetorConc = (float *)malloc(sizeof(float) *  N);
     srand(time(NULL));
     // preenche o vetor de entrada
     for (long int i = 0; i < N; i++)
@@ -77,9 +73,7 @@ int main(int argc, char *argv[])
     GET_TIME(ini);
     for (long long int i = 0; i < N; i++){
         //fazer
-        if(ehPrimo(vetor[i])){
-            printf("%d\n", vetor[i]);
-        }
+        vetorSeq[i] = ehPrimo(vetor[i]) ? sqrt(vetor[i]) : vetor[i];
     }
 
     GET_TIME(fim);
@@ -98,7 +92,7 @@ int main(int argc, char *argv[])
     pthread_mutex_init(&lock, NULL);
     for (long int i = 0; i < nthreads; i++)
     {
-        if (pthread_create(tid + i, NULL, tarefa, NULL))
+        if (pthread_create(tid + i, NULL, tarefa, (void *)vetorConc))
         {
             fprintf(stderr, "ERRO--pthread_create\n");
             return 3;
