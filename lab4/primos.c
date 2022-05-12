@@ -30,7 +30,9 @@ void *tarefa(void* arg)
 {
     double* vetorLocal = (double *) arg;
     // soma os elementos do bloco da thread
+    pthread_mutex_lock(&lock);
     int i = iGlobal < N ? 0 : N+1;
+    pthread_mutex_unlock(&lock);
     while(i < N){
         //fazer
         pthread_mutex_lock(&lock);
