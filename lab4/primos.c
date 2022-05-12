@@ -11,10 +11,13 @@ pthread_mutex_t lock;
 
 int ehPrimo(int n){
     double raiz = sqrt(n);
-    if(n <= 2){
+    if(n < 2){
         return 0;
     }
-    for(int i = 2; i <= raiz; i++){
+    if(n == 2){
+      return 1;
+    }
+    for(int i = 3; i <= raiz; i+= 2){
         if (!(n % i)){
             return 0;
         }
