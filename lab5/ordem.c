@@ -20,6 +20,8 @@ void *garcom(void *arg)
     {
         pthread_cond_wait(&cond, &lock);
     }
+    pthread_mutex_unlock(&lock);
+    pthread_mutex_lock(&lock);
     while (x < 4 && id == 1)
     {
         pthread_cond_wait(&cond, &lock);
