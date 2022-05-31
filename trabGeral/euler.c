@@ -22,10 +22,11 @@ double predadoresFunc(double x, double y)
 
 double *EulerAnimal(double passo, int predadoresInic, int presasInic, int tempoInic, int tempoObjetivo)
 {
-    double numbers[(int)((tempoObjetivo - tempoInic) / passo)];
+    double *numbers;
     double predadores = (double)predadoresInic;
     double presas = (double)presasInic;
     double tempoAtual = (double)tempoInic;
+    numbers = malloc(sizeof(double)*((tempoObjetivo - tempoInic) / passo));
     while (tempoAtual < tempoObjetivo)
     {
         predadores = predadores + (passo * predadoresFunc(presas, predadores));
@@ -54,18 +55,27 @@ typedef struct
 double* presas;
 double* predadores;
 double* tempo;
+int primeiraVez = 1;
+pthread_mutex_t mutex;
 
 //--funcao executada pelas threads
 void *anotarDados(void *arg)
 {
     eulerConfig *argumento = (eulerConfig *)arg;
-
     double i = (argumento->passo) * (argumento->indiceInicial);
-    presas[0] = argumento->presasInic;
-    predadores[0] = argumento->predadoresInic;
-    tempo[0] = 0;
+    pthread_mutex_lock(&mutex);
+    if(primeiraVez){
+        primeiraVez = 0;
+        pthread_mutex_unlock(&mutex);
+        presas[0] = argumento->presasInic;
+        predadores[0] = argumento->predadoresInic;
+        tempo[0] = 0;
+    }
+    pthread_mutex_unlock(&mutex);
+
     int contador = argumento->indiceInicial;
-    while (i < argumento->tempoFinal)
+    
+    while (i <= argumento->tempoFinal)
     {
         tempo[contador] = i;
         presas[contador] = EulerAnimal(argumento->passo, argumento->predadoresInic, argumento->presasInic, 0, i)[0];
@@ -80,20 +90,30 @@ void *anotarDados(void *arg)
 int main(void)
 {
     pthread_t tid_sistema[NTHREADS]; // identificadores das threads no sistema
-    int thread;                      // variavel auxiliar
-    eulerConfig config;
-    config.passo = 0.1;
-    config.predadoresInic = 5;
-    config.presasInic = 2;
-    config.tempoFinal = 1;
-    presas = malloc(sizeof(double)*(config.tempoFinal) / (config.passo));
-    predadores = malloc(sizeof(double)*(config.tempoFinal) / (config.passo));
-    tempo = malloc(sizeof(double)*(config.tempoFinal) / (config.passo));
+    int thread,tempoFinal = 1, presasInic=2,predadoresInic=5;
+    double passo = 0.1;                     // variavel auxiliar
+    eulerConfig *config;
+    config=malloc(sizeof(eulerConfig)*(NTHREADS));
+    if(config ==NULL){
+        printf("erro malloc");
+        return 0;
+    }
+    for(int i = 0; i < NTHREADS; i++){
+        config[i].passo = passo;
+        config[i].predadoresInic = predadoresInic;
+        config[i].presasInic = presasInic;
+        config[i].tempoFinal = tempoFinal;
+    }
 
-    for (thread = 0; thread <= NTHREADS; thread++)
+    pthread_mutex_init(&mutex, NULL);
+    presas = malloc(sizeof(double)*((tempoFinal /passo)+1));
+    predadores = malloc(sizeof(double)*((tempoFinal /passo)+1));
+    tempo = malloc(sizeof(double)*((tempoFinal /passo)+1));
+
+    for (thread = 0; thread < NTHREADS; thread++)
     {
-        config.indiceInicial = thread + 1;
-        if (pthread_create(tid_sistema + thread, NULL, anotarDados, (void *)config))
+        config[thread].indiceInicial = thread + 1;
+        if (pthread_create(&tid_sistema[thread], NULL, anotarDados, (void *)(config + thread)))
         {
             printf("--ERRO: pthread_create()\n");
             exit(-1);
@@ -104,9 +124,9 @@ int main(void)
     {
         pthread_join(*(tid_sistema + i), NULL);
     }
-    for(int i = 0; i < (config.tempoFinal) / (config.passo); i++){
-        printf("%lf ", tempo + i);
+    for(int i = 0; i <= (config->tempoFinal) / (config->passo); i++){
+        printf("%lf ", *(tempo + i));
     }
 
-    pthread_exit(NULL);
+    return 0;    
 }
