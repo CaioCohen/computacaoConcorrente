@@ -20,7 +20,7 @@ double predadoresFunc(double x, double y)
     return (-0.75) * y + (x * y) / 2;
 }
 
-double *EulerAnimal(double passo, int predadoresInic, int presasInic, int tempoInic, int tempoObjetivo)
+double *EulerAnimal(double passo, int predadoresInic, int presasInic, int tempoInic, double tempoObjetivo)
 {
     double *numbers;
     double predadores = (double)predadoresInic;
@@ -80,6 +80,7 @@ void *anotarDados(void *arg)
         tempo[contador] = i;
         presas[contador] = EulerAnimal(argumento->passo, argumento->predadoresInic, argumento->presasInic, 0, i)[0];
         predadores[contador] = EulerAnimal(argumento->passo, argumento->predadoresInic, argumento->presasInic, 0, i)[1];
+        //printf("tempo = %lf, presas = %lf, predadaores = %lf, i = %lf\n", tempo[contador], presas[contador], predadores[contador], i);
         i += (argumento->passo)*NTHREADS;
         contador += NTHREADS;
     }
@@ -91,7 +92,8 @@ int main(void)
 {
     pthread_t tid_sistema[NTHREADS]; // identificadores das threads no sistema
     int thread,tempoFinal = 1, presasInic=2,predadoresInic=5;
-    double passo = 0.1;                     // variavel auxiliar
+    double passo = 0.1;
+    FILE * fp;
     eulerConfig *config;
     config=malloc(sizeof(eulerConfig)*(NTHREADS));
     if(config ==NULL){
@@ -124,9 +126,11 @@ int main(void)
     {
         pthread_join(*(tid_sistema + i), NULL);
     }
-    for(int i = 0; i <= (config->tempoFinal) / (config->passo); i++){
-        printf("%lf ", *(tempo + i));
-    }
 
+    fp = fopen ("file.txt", "w");
+    for(int i = 0; i <= (config->tempoFinal) / (config->passo); i++){
+        fprintf(fp, "%lf,%lf,%lf\n", presas[i], predadores[i], tempo[i]);
+    }
+    fclose(fp);
     return 0;    
 }
