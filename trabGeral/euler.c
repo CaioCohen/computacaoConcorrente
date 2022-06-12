@@ -10,6 +10,8 @@
 
 #define NTHREADS 4 // total de threads a serem criadas
 
+int system(const char *command);
+
 double presasFunc(double x, double y)
 {
     return x - (x * y) / 2;
@@ -75,12 +77,11 @@ void *anotarDados(void *arg)
 
     int contador = argumento->indiceInicial;
     
-    while (i <= argumento->tempoFinal)
+    while (i < argumento->tempoFinal)
     {
         tempo[contador] = i;
         presas[contador] = EulerAnimal(argumento->passo, argumento->predadoresInic, argumento->presasInic, 0, i)[0];
-        predadores[contador] = EulerAnimal(argumento->passo, argumento->predadoresInic, argumento->presasInic, 0, i)[1];
-        //printf("tempo = %lf, presas = %lf, predadaores = %lf, i = %lf\n", tempo[contador], presas[contador], predadores[contador], i);
+        predadores[contador] = EulerAnimal(argumento->passo, argumento->predadoresInic, argumento->presasInic, 0, i)[1];        
         i += (argumento->passo)*NTHREADS;
         contador += NTHREADS;
     }
@@ -91,10 +92,11 @@ void *anotarDados(void *arg)
 int main(void)
 {
     pthread_t tid_sistema[NTHREADS]; // identificadores das threads no sistema
-    int thread,tempoFinal = 1, presasInic=2,predadoresInic=5;
+    int thread,tempoFinal = 100, presasInic=2,predadoresInic=5;
     double passo = 0.1;
     FILE * fp;
     eulerConfig *config;
+
     config=malloc(sizeof(eulerConfig)*(NTHREADS));
     if(config ==NULL){
         printf("erro malloc");
@@ -108,9 +110,9 @@ int main(void)
     }
 
     pthread_mutex_init(&mutex, NULL);
-    presas = malloc(sizeof(double)*((tempoFinal /passo)+1));
-    predadores = malloc(sizeof(double)*((tempoFinal /passo)+1));
-    tempo = malloc(sizeof(double)*((tempoFinal /passo)+1));
+    presas = malloc(sizeof(double)*((int)(tempoFinal /passo)));
+    predadores = malloc(sizeof(double)*((int)(tempoFinal /passo)));
+    tempo = malloc(sizeof(double)*((int)(tempoFinal /passo)));
 
     for (thread = 0; thread < NTHREADS; thread++)
     {
@@ -126,11 +128,11 @@ int main(void)
     {
         pthread_join(*(tid_sistema + i), NULL);
     }
-
     fp = fopen ("file.txt", "w");
     for(int i = 0; i <= (config->tempoFinal) / (config->passo); i++){
-        fprintf(fp, "%lf,%lf,%lf\n", presas[i], predadores[i], tempo[i]);
+        fprintf(fp, "%lf,%lf,%lf,", presas[i], predadores[i], tempo[i]);
     }
     fclose(fp);
+    system("python3 plot.py");
     return 0;    
 }
