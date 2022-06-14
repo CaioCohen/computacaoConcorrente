@@ -7,8 +7,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <pthread.h>
+#include "timer.h"
 
-#define NTHREADS 4 // total de threads a serem criadas
+int NTHREADS; // total de threads a serem criadas
 
 int system(const char *command);
 
@@ -58,6 +59,9 @@ double* presas;
 double* predadores;
 double* tempo;
 int primeiraVez = 1;
+double* presasSeq;
+double* predadoresSeq;
+double* tempoSeq;
 pthread_mutex_t mutex;
 
 //--funcao executada pelas threads
@@ -72,12 +76,13 @@ void *anotarDados(void *arg)
         presas[0] = argumento->presasInic;
         predadores[0] = argumento->predadoresInic;
         tempo[0] = 0;
+    }else{
+        pthread_mutex_unlock(&mutex);
     }
-    pthread_mutex_unlock(&mutex);
 
     int contador = argumento->indiceInicial;
     
-    while (i < argumento->tempoFinal)
+    while (i <= argumento->tempoFinal)
     {
         tempo[contador] = i;
         presas[contador] = EulerAnimal(argumento->passo, argumento->predadoresInic, argumento->presasInic, 0, i)[0];
@@ -88,14 +93,44 @@ void *anotarDados(void *arg)
     pthread_exit(NULL);
 }
 
-//--funcao principal do programa
-int main(void)
+void anotarDadosSeq(double passo, double presasInic, double predadoresInic, double tempoFinal)
 {
-    pthread_t tid_sistema[NTHREADS]; // identificadores das threads no sistema
-    int thread,tempoFinal = 100, presasInic=2,predadoresInic=5;
+    double i = 0.1;
+    presasSeq[0] = presasInic;
+    predadoresSeq[0] = predadoresInic;
+    tempoSeq[0] = 0;
+
+    int contador = 1;
+    
+    while (i <= tempoFinal)
+    {
+        tempo[contador] = i;
+        presas[contador] = EulerAnimal(passo, predadoresInic, presasInic, 0, i)[0];
+        predadores[contador] = EulerAnimal(passo, predadoresInic, presasInic, 0, i)[1];        
+        i += passo;
+        contador++;
+    }
+}
+
+//--funcao principal do programa
+int main(int argc, char *argv[])
+{
+    int thread,tempoFinal, presasInic,predadoresInic;
     double passo = 0.1;
+    double timeSeq, timeConc;
+    double ini, fim;
     FILE * fp;
     eulerConfig *config;
+    if (argc < 5)
+    {
+        fprintf(stderr, "Digite: %s <nthreads> <presas> <predadores> <tempo final>\n", argv[0]);
+        return 1;
+    }
+    NTHREADS = atoi(argv[1]);
+    presasInic = atoi(argv[2]);
+    predadoresInic = atoi(argv[3]);
+    tempoFinal = atoi(argv[4]);
+    pthread_t tid_sistema[NTHREADS]; // identificadores das threads no sistema
 
     config=malloc(sizeof(eulerConfig)*(NTHREADS));
     if(config ==NULL){
@@ -114,6 +149,10 @@ int main(void)
     predadores = malloc(sizeof(double)*((int)(tempoFinal /passo)));
     tempo = malloc(sizeof(double)*((int)(tempoFinal /passo)));
 
+    presasSeq = malloc(sizeof(double)*((int)(tempoFinal /passo)));
+    predadoresSeq = malloc(sizeof(double)*((int)(tempoFinal /passo)));
+    tempoSeq = malloc(sizeof(double)*((int)(tempoFinal /passo)));
+    GET_TIME(ini);
     for (thread = 0; thread < NTHREADS; thread++)
     {
         config[thread].indiceInicial = thread + 1;
@@ -126,8 +165,17 @@ int main(void)
 
     for (int i = 0; i < NTHREADS; i++)
     {
-        pthread_join(*(tid_sistema + i), NULL);
+        pthread_join(tid_sistema[i], NULL);
     }
+    GET_TIME(fim);
+    timeConc = fim - ini;
+    printf("%f\n", timeConc);
+    GET_TIME(ini);
+    anotarDadosSeq(passo, presasInic, predadoresInic,tempoFinal);
+    GET_TIME(fim);
+    timeSeq = fim - ini;
+    printf("%f\n", timeSeq);
+    printf("aceleracao: %f\n",timeSeq/timeConc);
     fp = fopen ("file.txt", "w");
     for(int i = 0; i <= (config->tempoFinal) / (config->passo); i++){
         fprintf(fp, "%lf,%lf,%lf,", presas[i], predadores[i], tempo[i]);

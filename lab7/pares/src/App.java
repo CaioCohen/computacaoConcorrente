@@ -21,14 +21,14 @@ class Preenche implements Runnable {
     }
 }
 
-class EncontrarPares implements Runnable {
+class EncontrarPares extends Thread {
     private int indice;
     int[] vetor;
     int N;
-    int numeroPares;
+    Pares numeroPares;
 
     // --construtor
-    public EncontrarPares(int i, int[] vetor, int N, int numeroPares) {
+    public EncontrarPares(int i, int[] vetor, int N, Pares numeroPares) {
         this.indice = i;
         this.vetor = vetor;
         this.N = N;
@@ -47,7 +47,22 @@ class EncontrarPares implements Runnable {
     }
 
     public synchronized void retornarSoma(int soma) {
-        this.numeroPares += soma;
+        this.numeroPares.addPares(soma);
+    }
+}
+
+class Pares{
+    public int numeroPares;
+    public Pares(){
+        this.numeroPares = 0;
+    }
+
+    public void addPares(int n){
+        this.numeroPares += n;
+    }
+
+    public int getPares(){
+        return this.numeroPares;
     }
 }
 
@@ -58,7 +73,7 @@ public class App {
     public static void main(String[] args) {
         Thread[] threads = new Thread[N];
         int[] vetor = new int[Tamanho];
-        int NumeroPares = 0;
+        Pares NumeroPares = new Pares();
 
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new Thread(new Preenche(i, vetor, N)); // Eu sei que o lab pede apenas para que a leitura seja
@@ -81,7 +96,7 @@ public class App {
         }
 
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread(new EncontrarPares(i, vetor, N, NumeroPares)); // por algum motivo, ele não deixa o
+            threads[i] = new EncontrarPares(i, vetor, N, NumeroPares); // por algum motivo, ele não deixa o
                                                                                    // NumeroPares não ser estatico
         }
 
@@ -96,6 +111,6 @@ public class App {
                 return;
             }
         }
-        System.out.println(NumeroPares);//por algum motivo o valor de NumeroPares não está mudando
+        System.out.println(NumeroPares.getPares());//por algum motivo o valor de NumeroPares não está mudando
     }
 }
