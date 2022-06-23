@@ -104,9 +104,9 @@ void anotarDadosSeq(double passo, double presasInic, double predadoresInic, doub
     
     while (i <= tempoFinal)
     {
-        tempo[contador] = i;
-        presas[contador] = EulerAnimal(passo, predadoresInic, presasInic, 0, i)[0];
-        predadores[contador] = EulerAnimal(passo, predadoresInic, presasInic, 0, i)[1];        
+        tempoSeq[contador] = i;
+        presasSeq[contador] = EulerAnimal(passo, predadoresInic, presasInic, 0, i)[0];
+        predadoresSeq[contador] = EulerAnimal(passo, predadoresInic, presasInic, 0, i)[1];        
         i += passo;
         contador++;
     }
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
     printf("aceleracao: %f\n",timeSeq/timeConc);
     fp = fopen ("file.txt", "w");
     for(int i = 0; i <= (config->tempoFinal) / (config->passo); i++){
-        fprintf(fp, "%lf,%lf,%lf,", presas[i], predadores[i], tempo[i]);
+        fprintf(fp, "%lf,%lf,%lf,", presasSeq[i], predadoresSeq[i], tempoSeq[i]);
     }
     fclose(fp);
     system("python3 plot.py");

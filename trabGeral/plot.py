@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+
 def plotar():
     f = open("file.txt", "r")
     dados = f.read()
